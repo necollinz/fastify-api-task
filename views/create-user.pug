@@ -1,0 +1,20 @@
+html
+  head
+    meta(charset="UTF-8")
+    title Создание пользователя
+  body
+    h1 Создать пользователя
+
+    form(action="/users" method="POST")
+      div
+        label Имя:
+        input(type="text" name="name" required)
+
+      div
+        label Email:
+        input(type="email" name="email" required)
+
+      button(type="submit") Создать
+
+    br
+    a(href="/users") Назад

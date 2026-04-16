@@ -1,0 +1,12 @@
+html
+  head
+    meta(charset="UTF-8")
+    title Пользователи
+  body
+    h1 Список пользователей
+
+    ul
+      each user in users
+        li #{user.id} - #{user.name} (#{user.email})
+
+    a(href="/users/create") Добавить пользователя
