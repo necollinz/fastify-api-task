@@ -5,8 +5,14 @@ html
   body
     h1 Список пользователей
 
+    a(href="/users/create") Добавить пользователя
+
     ul
       each user in users
-        li #{user.id} - #{user.name} (#{user.email})
+        li
+          | #{user.id} - #{user.name} (#{user.email}) 
 
-    a(href="/users/create") Добавить пользователя
+          a(href=`/users/edit/${user.id}`) Редактировать
+
+          form(action=`/users/delete/${user.id}` method="POST" style="display:inline")
+            button(type="submit") Удалить

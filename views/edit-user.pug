@@ -1,0 +1,18 @@
+html
+  head
+    meta(charset="UTF-8")
+    title Редактирование
+  body
+    h1 Редактировать пользователя
+
+    form(action=`/users/edit/${user.id}` method="POST")
+      div
+        input(type="text" name="name" value=user.name required)
+
+      div
+        input(type="email" name="email" value=user.email required)
+
+      button(type="submit") Сохранить
+
+    br
+    a(href="/users") Назад

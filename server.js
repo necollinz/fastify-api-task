@@ -6,58 +6,108 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import pug from 'pug'
 
+import sqlite3 from 'sqlite3'
+import { open } from 'sqlite'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const app = Fastify()
+
+// плагины
 app.register(formbody)
 
-
-// массив пользователей
-let users = [
-  { id: 1, name: 'Сергей', email: 'seezov@mail.com' },
-  { id: 2, name: 'Денчик', email: 'denis@mail.com' },
-  { id: 3, name: 'Кот', email: 'cat@mail.com' },
-  { id: 4, name: 'Пёс', email: 'dog@mail.com' },
-  { id: 5, name: 'Котопёс', email: 'catdog@mail.com' }
-]
-
-// статика
 app.register(fastifyStatic, {
   root: path.join(__dirname, 'public')
 })
 
-// pug
 app.register(fastifyView, {
   engine: { pug },
   root: path.join(__dirname, 'views')
 })
 
-// список пользователей
-app.get('/users', (req, reply) => {
-  return reply.view('users.pug', { users })
-})
+// запуск
+const start = async () => {
+  try {
+    // БД
+    const db = await open({
+      filename: './database.db',
+      driver: sqlite3.Database
+    })
 
-// форма создания
-app.get('/users/create', (req, reply) => {
-  return reply.view('create-user.pug')
-})
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        email TEXT
+      )
+    `)
 
-// обработка формы
-app.post('/users', async (req, reply) => {
-  const { name, email } = req.body
+    console.log('БД подключена')
 
-  const newUser = {
-    id: users.length + 1,
-    name,
-    email
+    // редирект с /
+    app.get('/', (req, reply) => {
+      return reply.redirect('/users')
+    })
+
+    // список
+    app.get('/users', async (req, reply) => {
+      const users = await db.all('SELECT * FROM users')
+      return reply.view('users.pug', { users })
+    })
+
+    // форма создания
+    app.get('/users/create', (req, reply) => {
+      return reply.view('create-user.pug')
+    })
+
+    // создание
+    app.post('/users', async (req, reply) => {
+      const { name, email } = req.body
+
+      await db.run(
+        'INSERT INTO users (name, email) VALUES (?, ?)',
+        [name, email]
+      )
+
+      return reply.redirect('/users')
+    })
+
+    // удаление
+    app.post('/users/delete/:id', async (req, reply) => {
+      await db.run('DELETE FROM users WHERE id = ?', [req.params.id])
+      return reply.redirect('/users')
+    })
+
+    // форма редактирования
+    app.get('/users/edit/:id', async (req, reply) => {
+      const user = await db.get(
+        'SELECT * FROM users WHERE id = ?',
+        [req.params.id]
+      )
+
+      return reply.view('edit-user.pug', { user })
+    })
+
+    // обновление
+    app.post('/users/edit/:id', async (req, reply) => {
+      const { name, email } = req.body
+
+      await db.run(
+        'UPDATE users SET name = ?, email = ? WHERE id = ?',
+        [name, email, req.params.id]
+      )
+
+      return reply.redirect('/users')
+    })
+
+    await app.listen({ port: 3000 })
+
+    console.log('http://localhost:3000')
+
+  } catch (err) {
+    console.error(err)
+    process.exit(1)
   }
+}
 
-  users.push(newUser)
-
-  return reply.redirect('/users')
-})
-
-app.listen({ port: 3000 }, (err) => {
-  if (err) throw err
-  console.log('Сервер запущен: http://localhost:3000')
-})
+start()

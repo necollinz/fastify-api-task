@@ -7,12 +7,10 @@ html
 
     form(action="/users" method="POST")
       div
-        label Имя:
-        input(type="text" name="name" required)
+        input(type="text" name="name" placeholder="Имя" required)
 
       div
-        label Email:
-        input(type="email" name="email" required)
+        input(type="email" name="email" placeholder="Email" required)
 
       button(type="submit") Создать
 
